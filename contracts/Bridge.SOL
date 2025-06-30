@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+interface IPicklesToken {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function transfer(address to, uint256 amount) external returns (bool);
+    function burn(uint256 amount) external;
+    function mint(address to, uint256 amount) external;
+}
+
+contract PicklesBridge {
+    address public admin;
+    IPicklesToken public token;
+
+    event TokensLocked(address indexed user, uint256 amount, string targetChain, address targetAddress);
+    event TokensMinted(address indexed to, uint256 amount);
+    event TokensBurned(address indexed user, uint256 amount, string targetChain, address targetAddress);
+    event TokensUnlocked(address indexed to, uint256 amount);
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Not admin");
+        _;
+    }
+
+    constructor(address _token) {
+        admin = msg.sender;
+        token = IPicklesToken(_token);
+    }
+
+    function lockTokens(uint256 amount, string memory targetChain, address targetAddress) external {
+        require(token.transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        emit TokensLocked(msg.sender, amount, targetChain, targetAddress);
+    }
+
+    function mintTokens(address to, uint256 amount) external onlyAdmin {
+        token.mint(to, amount);
+        emit TokensMinted(to, amount);
+    }
+
+    function burnTokens(uint256 amount, string memory targetChain, address targetAddress) external {
+        token.burn(amount);
+        emit TokensBurned(msg.sender, amount, targetChain, targetAddress);
+    }
+
+    function unlockTokens(address to, uint256 amount) external onlyAdmin {
+        token.transfer(to, amount);
+        emit TokensUnlocked(to, amount);
+    }
+
+    function changeAdmin(address newAdmin) external onlyAdmin {
+        admin = newAdmin;
+    }
+}
