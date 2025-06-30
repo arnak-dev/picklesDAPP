@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pickles - DApp</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+ 
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/web3modal@1.9.12/dist/index.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #00f59e;
+      --dark: #0e1217;
+      --card: #1b1f27;
+      --radius: 16px;
+    }
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family: 'DM Sans', sans-serif;
+    }
+    body {
+      background: var(--dark);
+      color: white;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background: #15191f;
+      border-radius: var(--radius);
+      flex-wrap: wrap;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .logo img {
+      width: 48px;
+      height: 48px;
+      margin-right: 12px;
+      border-radius: 50%;
+    }
+    .container {
+  max-width: 800px;
+  margin: 40px auto;
+  background: var(--card);
+  padding: 30px;
+  border-radius: var(--radius);
+  box-shadow: 0 0 15px rgba(0,255,180,0.1);
+}
+.stat {
+  margin: 10px 0;
+  font-size: 16px;
+}
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius);
+  border: none;
+  margin-top: 10px;
+  font-size: 16px;
+  background: #0e1217;
+  color: white;
+}
+.buttons.desktop-only {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: bold;
+  min-width: 100px;
+  transition: background-color 0.3s;
+}
+.approve { background: #2980b9; color: white; }
+.stake { background: #27ae60; color: white; }
+.unstake { background: #c0392b; color: white; }
+.disabled { background: grey; cursor: not-allowed; }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    nav a {
+      color: #aaa;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+    nav a:hover {
+      color: var(--primary);
+      background: rgba(0, 245, 158, 0.1);
+    }
+    .wallet-btn {
+      background: var(--primary);
+      color: black;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .page {
+      display: none;
+      padding: 20px;
+    }
+    .page.active {
+      display: block;
+    }
+    .menu-group {
+  position: relative;
+}
+.menu-group > a {
+  color: #aaa;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 6px 12px;
+  display: block;
+  cursor: pointer;
+}
+.menu-group .submenu {
+  display: none;
+  position: absolute;
+  background: #222;
+  border-radius: var(--radius);
+  padding: 10px;
+  top: 36px;
+  z-index: 1000;
+  min-width: 140px;
+}
+.menu-group:hover .submenu {
+  display: block;
+}
+.submenu a {
+  display: block;
+  color: #aaa;
+  text-decoration: none;
+  padding: 6px 10px;
+}
+.submenu a:hover {
+  color: var(--primary);
+}
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: flex !important;
+  }
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #15191f;
+    display: flex;
+    justify-content: space-around;
+    border-top: 1px solid #333;
+    padding: 10px 0;
+    z-index: 9999;
+  }
+  .bottom-nav .menu-group {
+    position: relative;
+    text-align: center;
+  }
+  .bottom-nav .menu-group > a {
+    color: #ccc;
+    font-size: 14px;
+    display: block;
+  }
+  .bottom-nav .submenu {
+  display: none;
+  position: absolute;
+  top: -110px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222;
+  padding: 10px;
+  border-radius: var(--radius);
+  z-index: 10000;
+}
+
+  .bottom-nav .menu-group:hover .submenu {
+    display: block;
+  }
+  .bottom-nav .submenu a {
+    display: block;
+    color: #aaa;
+    font-size: 14px;
+    padding: 5px 10px;
+  }
+  .bottom-nav .submenu a:hover {
+    color: var(--primary);
+  }
+}
+.desktop-only {
+  display: flex !important;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: flex !important;
+  }
+}
+.fixed-bottom-buttons {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .buttons.mobile-only {
+    display: flex !important;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo" onclick="showPage('pageHome')" style="cursor:pointer;">
+  <img src="logo.png" alt="Pickles Logo" /> Pickles
+</div>
+
+    <nav class="desktop-only">
+  <div class="menu-group">
+    <a>Earn ▾</a>
+    <div class="submenu">
+      <a onclick="showPage('pageStaking')">Staking</a>
+      <a onclick="showPage('pagePool')">Pool</a>
+      <a onclick="showPage('pageGame')">Game</a>
+    </div>
+  </div>
+
+  <div class="menu-group">
+    <a>Bet ▾</a>
+    <div class="submenu">
+      <a onclick="showPage('pagePredictions')">Predictions</a>
+      <a onclick="showPage('pageMyBets')">My Bets</a>
+      <a onclick="showPage('pageCreateBet')">Create</a>
+    </div>
+  </div>
+
+  <div class="menu-group">
+    <a>More ▾</a>
+    <div class="submenu">
+      <a onclick="showPage('pageAirdrop')">Airdrop</a>
+      <a onclick="showPage('pageTrade')">Trade</a>
+    </div>
+  </div>
+</nav>
+
+    <button class="wallet-btn" onclick="connectWallet()" id="walletButton">Connect Wallet</button>
+  </header>
+<!-- صفحه اصلی: Home -->
+<div id="pageHome" class="page active">
+  <div class="main" style="max-width: 1200px; margin: 30px auto; padding: 0 20px;">
+    <div class="hero" style="background: linear-gradient(145deg, #1e1e2e, #15151f); border-radius: var(--radius); padding: 40px; text-align: center;">
+      <img src="logo.png" alt="Logo" style="width: 72px; height: 72px; border-radius: 50%; margin-bottom: 20px;">
+      <h1 style="font-size: 42px; color: var(--primary);">Stake. Play. Earn.</h1>
+      <p style="color: #ccc; font-size: 16px; margin-top: 12px;">Explore the world of DeFi gaming on Sonic with Pickles.</p>
+    </div>
+
+    <div class="cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 30px;">
+      <div class="card" style="background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+        <h3>Staking</h3>
+        <p>Stake tokens and earn passive rewards.</p>
+      </div>
+      <div class="card" style="background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+        <h3>Profile</h3>
+        <p>Activate profile to join games and earn.</p>
+      </div>
+      <div class="card" style="background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+        <h3>Ranking</h3>
+        <p>See your rank and track your progress.</p>
+      </div>
+    </div>
+
+    <div class="airdrop" style="background: rgba(0,255,180,0.1); border: 1px dashed var(--primary); padding: 30px; margin-top: 40px; border-radius: var(--radius); text-align: center;">
+      <h3>Airdrop Ongoing!</h3>
+      <p>Stake to be eligible for the next airdrop.</p>
+      <button onclick="showPage('pageAirdrop')" style="margin-top: 16px; background: var(--primary); color: black; padding: 10px 20px; border-radius: var(--radius); border: none; font-weight: bold; cursor: pointer;">START</button>
+    </div>
+  </div>
+</div>
+<!-- صفحه Predictions -->
+<div id="pagePredictions" class="page">
+  <h2 style="color: var(--primary); text-align: center;">Available Bets</h2>
+  <div id="betList"></div>
+
+  <script>
+    async function loadBets() {
+      if (!window.ethereum) return;
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const contractAddress = "0x1E557D78CFC2ef4c0E926e30a337cA44658a7001";
+      const abi = [
+        {"inputs":[],"name":"nextId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"uint256","name":"id","type":"uint256"}],"name":"getBetSummary","outputs":[
+          {"internalType":"string","name":"title","type":"string"},
+          {"internalType":"string","name":"desc","type":"string"},
+          {"internalType":"string","name":"image","type":"string"},
+          {"internalType":"bool","name":"active","type":"bool"},
+          {"internalType":"bool","name":"ended","type":"bool"},
+          {"internalType":"uint256","name":"totalAmount","type":"uint256"},
+          {"internalType":"uint256","name":"numOptions","type":"uint256"},
+          {"internalType":"uint256","name":"deadline","type":"uint256"}
+        ],"stateMutability":"view","type":"function"}
+      ];
+      const contract = new ethers.Contract(contractAddress, abi, provider);
+      const nextId = await contract.nextId();
+      const betList = document.getElementById("betList");
+      betList.innerHTML = "";
+      for (let i = 0; i < nextId; i++) {
+        try {
+          const bet = await contract.getBetSummary(i);
+          if (bet.active && !bet.ended) {
+            const card = document.createElement("div");
+            card.style = "background: var(--card); padding: 20px; border-radius: 12px; margin: 20px 0;";
+            card.innerHTML = `
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+                <div style="flex:1; min-width:200px;">
+                  <h3 style="color: var(--primary); margin-bottom: 8px;">${bet.title}</h3>
+                  <p style="color: #ccc; margin-bottom: 8px;">${bet.desc}</p>
+                  <div style="font-size:13px; color: #999;">Deadline: ${new Date(bet.deadline * 1000).toLocaleString()}</div>
+                  <button onclick="openBetDetails(${i})" class="view-btn" style="margin-top:10px;background:var(--primary);color:black;padding:8px 16px;border:none;border-radius:10px;cursor:pointer;font-weight:600;">View & Vote</button>
+                </div>
+                <img src="${bet.image}" alt="bet" style="width:80px;height:80px;border-radius:8px;object-fit:cover;margin-left:15px;" />
+              </div>`;
+            betList.appendChild(card);
+          }
+        } catch (e) {
+          console.error("Error loading bet", i, e);
+        }
+      }
+    }
+
+    function openBetDetails(id) {
+      showPage('pageBetDetails');
+      loadBetDetails(id);
+    }
+
+    // auto-load bets if wallet is connected
+    window.addEventListener("load", () => {
+      const saved = localStorage.getItem("walletAddress");
+      if (saved && window.ethereum) {
+        loadBets();
+      }
+    });
+  </script>
+</div>
+<!-- صفحه Bet Details -->
+<div id="pageBetDetails" class="page">
+  <h2 style="color: var(--primary); text-align: center;">Bet Details</h2>
+  <div id="betDetailContainer">Loading...</div>
+  <canvas id="voteChart" style="max-width: 100%; margin-top: 30px;"></canvas>
+
+  <script>
+    async function loadBetDetails(betId) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const contract = new ethers.Contract(
+        "0x1E557D78CFC2ef4c0E926e30a337cA44658a7001",
+        [
+          {"inputs":[{"internalType":"uint256","name":"id","type":"uint256"}],
+           "name":"getBetSummary",
+           "outputs":[
+             {"internalType":"string","name":"title","type":"string"},
+             {"internalType":"string","name":"desc","type":"string"},
+             {"internalType":"string","name":"image","type":"string"},
+             {"internalType":"bool","name":"active","type":"bool"},
+             {"internalType":"bool","name":"ended","type":"bool"},
+             {"internalType":"uint256","name":"totalAmount","type":"uint256"},
+             {"internalType":"uint256","name":"numOptions","type":"uint256"},
+             {"internalType":"uint256","name":"deadline","type":"uint256"},
+             {"internalType":"uint256","name":"winningOption","type":"uint256"}
+           ],
+           "stateMutability":"view",
+           "type":"function"
+          },
+          {
+            "inputs":[{"internalType":"uint256","name":"id","type":"uint256"}],
+            "name":"getOptions",
+            "outputs":[
+              {"internalType":"string[]","name":"","type":"string[]"},
+              {"internalType":"uint256[]","name":"","type":"uint256[]"}
+            ],
+            "stateMutability":"view",
+            "type":"function"
+          }
+        ],
+        signer
+      );
+
+      const summary = await contract.getBetSummary(betId);
+      const [labels, votes] = await contract.getOptions(betId);
+      const container = document.getElementById("betDetailContainer");
+
+      container.innerHTML = `
+        <h3 style="color: var(--primary);">${summary.title}</h3>
+        <p>${summary.desc}</p>
+        <img src="${summary.image}" alt="Bet Image" style="max-width:100%;border-radius:10px;margin:10px 0;">
+        <p style="color:#ccc;">Ends: ${new Date(summary.deadline * 1000).toLocaleString()}</p>
+      `;
+
+      const totalVotes = votes.reduce((a, b) => a.add(b), ethers.BigNumber.from(0));
+      const percents = votes.map(v => totalVotes.gt(0) ? parseFloat(v.mul(100).div(totalVotes).toString()) : 0);
+
+      new Chart(document.getElementById('voteChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Vote %',
+            data: percents,
+            backgroundColor: ['#00f59e', '#2a2f3a', '#00c488', '#ff7675']
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#fff' }, grid: { color: '#2a2f3a' } },
+            y: { ticks: { color: '#fff' }, grid: { color: '#2a2f3a' } }
+          }
+        }
+      });
+    }
+  </script>
+</div>
+<div id="pageCreateBet" class="page">
+  <h2 style="color: var(--primary); text-align: center;">Create a New Bet</h2>
+  <form id="createBetForm" style="max-width: 800px; margin: auto; background: var(--card); padding: 30px; border-radius: var(--radius);">
+    <label>Title</label>
+    <input type="text" id="title" required style="width:100%;padding:10px;margin-top:5px;border-radius:8px;border:none;background:#222;color:white;" />
+
+    <label style="margin-top:15px;">Description</label>
+    <textarea id="description" rows="3" required style="width:100%;padding:10px;margin-top:5px;border-radius:8px;border:none;background:#222;color:white;"></textarea>
+
+    <label style="margin-top:15px;">Upload Image</label>
+    <input type="file" id="imageFile" accept="image/*" />
+
+    <label style="margin-top:15px;">Options</label>
+    <div id="options">
+      <div class="option-field" style="display:flex;margin-top:10px;">
+        <input type="text" required style="flex:1;padding:10px;border-radius:8px;border:none;background:#222;color:white;" />
+        <button type="button" onclick="removeOption(this)" style="margin-left:10px;background:#ff5252;color:white;border:none;padding:0 10px;border-radius:6px;cursor:pointer;">×</button>
+      </div>
+      <div class="option-field" style="display:flex;margin-top:10px;">
+        <input type="text" required style="flex:1;padding:10px;border-radius:8px;border:none;background:#222;color:white;" />
+        <button type="button" onclick="removeOption(this)" style="margin-left:10px;background:#ff5252;color:white;border:none;padding:0 10px;border-radius:6px;cursor:pointer;">×</button>
+      </div>
+    </div>
+
+    <button type="button" onclick="addOption()" style="margin-top:15px;background:var(--primary);color:black;padding:10px 20px;border:none;border-radius:10px;cursor:pointer;">Add Option</button>
+
+    <label style="margin-top:15px;">Deadline (Date & Time)</label>
+    <input type="datetime-local" id="deadline" required style="width:100%;padding:10px;margin-top:5px;border-radius:8px;border:none;background:#222;color:white;" />
+
+    <button type="submit" style="margin-top:20px;background:var(--primary);color:black;padding:12px;width:100%;border:none;border-radius:10px;font-size:16px;font-weight:600;">Create Bet (10 S)</button>
+    <div class="error" id="errorMsg" style="color:#ff7675;margin-top:10px;text-align:center;"></div>
+  </form>
+
+  <script>
+    const betContractAddress = "0x1E557D78CFC2ef4c0E926e30a337cA44658a7001";
+    const optionsDiv = document.getElementById('options');
+
+    function addOption() {
+      const count = optionsDiv.querySelectorAll('.option-field').length;
+      if (count >= 4) return alert('Maximum 4 options allowed');
+      const field = document.createElement('div');
+      field.className = 'option-field';
+      field.style = 'display:flex;margin-top:10px;';
+      field.innerHTML = '<input type="text" required style="flex:1;padding:10px;border-radius:8px;border:none;background:#222;color:white;" /><button type="button" onclick="removeOption(this)" style="margin-left:10px;background:#ff5252;color:white;border:none;padding:0 10px;border-radius:6px;cursor:pointer;">×</button>';
+      optionsDiv.appendChild(field);
+    }
+
+    function removeOption(btn) {
+      const count = optionsDiv.querySelectorAll('.option-field').length;
+      if (count <= 2) return alert('Minimum 2 options required');
+      btn.parentElement.remove();
+    }
+
+    document.getElementById("createBetForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const reader = new FileReader();
+      const file = document.getElementById("imageFile").files[0];
+      reader.readAsDataURL(file);
+      reader.onloadend = async function () {
+        const image = reader.result;
+        const title = document.getElementById("title").value;
+        const desc = document.getElementById("description").value;
+        const deadlineInput = document.getElementById("deadline").value;
+        const deadlineTimestamp = Math.floor(new Date(deadlineInput).getTime() / 1000);
+        const options = [...optionsDiv.querySelectorAll("input")].map(input => input.value);
+
+        try {
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = provider.getSigner();
+          const contract = new ethers.Contract(betContractAddress, [
+            {
+              "inputs": [
+                {"internalType":"string","name":"title","type":"string"},
+                {"internalType":"string","name":"desc","type":"string"},
+                {"internalType":"string","name":"image","type":"string"},
+                {"internalType":"string[]","name":"options","type":"string[]"},
+                {"internalType":"uint256","name":"deadline","type":"uint256"}
+              ],
+              "name": "createBet",
+              "outputs": [],
+              "stateMutability": "payable",
+              "type": "function"
+            }
+          ], signer);
+
+          const tx = await contract.createBet(title, desc, image, options, deadlineTimestamp, {
+            value: ethers.utils.parseEther("10")
+          });
+          await tx.wait();
+          alert("Bet created successfully!");
+          window.location.reload();
+        } catch (err) {
+          console.error(err);
+          document.getElementById("errorMsg").innerText = "Failed to create bet: " + (err.data?.message || err.message);
+        }
+      };
+    });
+  </script>
+</div>
+<div id="pageMyBets" class="page">
+  <h2 style="color: var(--primary); text-align: center;">My Bets</h2>
+  <div id="createdBetsBox" style="max-width:900px;margin:30px auto;background:var(--card);padding:20px;border-radius:var(--radius);">
+    <h3 style="color:white;">Created Bets</h3>
+  </div>
+  <div id="joinedBetsBox" style="max-width:900px;margin:30px auto;background:var(--card);padding:20px;border-radius:var(--radius);">
+    <h3 style="color:white;">Participated Bets</h3>
+  </div>
+
+  <script>
+    const BETTING_ADDRESS = "0x1E557D78CFC2ef4c0E926e30a337cA44658a7001";
+    const betAbi = [
+      {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserCreated","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserJoined","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"id","type":"uint256"}],"name":"bets","outputs":[
+        {"internalType":"uint256","name":"id","type":"uint256"},
+        {"internalType":"string","name":"title","type":"string"},
+        {"internalType":"string","name":"description","type":"string"},
+        {"internalType":"string","name":"image","type":"string"},
+        {"internalType":"address","name":"creator","type":"address"},
+        {"internalType":"bool","name":"active","type":"bool"},
+        {"internalType":"bool","name":"ended","type":"bool"},
+        {"internalType":"uint256","name":"winningOption","type":"uint256"},
+        {"internalType":"uint256","name":"totalAmount","type":"uint256"},
+        {"internalType":"uint256","name":"deadline","type":"uint256"}
+      ],"stateMutability":"view","type":"function"}
+    ];
+
+    async function loadMyBets() {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const userAddress = await signer.getAddress();
+      const contract = new ethers.Contract(BETTING_ADDRESS, betAbi, signer);
+      const created = await contract.getUserCreated(userAddress);
+      const joined = await contract.getUserJoined(userAddress);
+      const createdBox = document.getElementById("createdBetsBox");
+      const joinedBox = document.getElementById("joinedBetsBox");
+
+      createdBox.innerHTML += (created.length === 0) ? "<p style='color:#aaa;'>You have not created any bets yet.</p>" : "";
+      for (let id of created) {
+        const bet = await contract.bets(id);
+        const card = `
+          <div style="background:#15191f;margin:10px 0;padding:16px;border-radius:var(--radius);box-shadow:0 0 8px rgba(0,245,158,0.3);">
+            <strong style="color:var(--primary);font-size:18px;">${bet.title}</strong>
+            <p style="color:#aaa;">Status: ${bet.ended ? "Ended" : "Active"} | Total: ${ethers.utils.formatUnits(bet.totalAmount, 6)} USDC</p>
+            <button onclick="openBetDetails(${id})" style="margin-top:8px;background:var(--primary);color:black;padding:8px 16px;border:none;border-radius:8px;cursor:pointer;">View</button>
+          </div>`;
+        createdBox.innerHTML += card;
+      }
+
+      joinedBox.innerHTML += (joined.length === 0) ? "<p style='color:#aaa;'>You have not participated in any bets yet.</p>" : "";
+      for (let id of joined) {
+        const bet = await contract.bets(id);
+        const card = `
+          <div style="background:#15191f;margin:10px 0;padding:16px;border-radius:var(--radius);box-shadow:0 0 8px rgba(0,245,158,0.3);">
+            <strong style="color:var(--primary);font-size:18px;">${bet.title}</strong>
+            <p style="color:#aaa;">Status: ${bet.ended ? "Ended" : "Active"}</p>
+            <button onclick="openBetDetails(${id})" style="margin-top:8px;background:var(--primary);color:black;padding:8px 16px;border:none;border-radius:8px;cursor:pointer;">View</button>
+          </div>`;
+        joinedBox.innerHTML += card;
+      }
+    }
+
+    function openBetDetails(id) {
+      showPage('pageBetDetails');
+      loadBetDetails(id);
+    }
+
+    window.addEventListener("load", () => {
+      const saved = localStorage.getItem("walletAddress");
+      if (saved && window.ethereum) loadMyBets();
+    });
+  </script>
+</div>
+<div id="pageGame" class="page">
+  <h2 style="color: var(--primary); text-align: center;">Rock Paper Scissors</h2>
+  <div style="max-width: 600px; margin: 30px auto; background: var(--card); padding: 20px; border-radius: var(--radius); text-align: center;">
+    <p style="color:#ccc;">Play 5 rounds. Winner takes the prize.</p>
+    <div id="gameStatus" style="margin: 20px 0;">Waiting for opponent...</div>
+    <div id="rpsButtons" style="display: flex; justify-content: center; gap: 16px; margin-bottom: 20px;">
+      <button onclick="makeMove('rock')" style="padding: 12px 16px; background: var(--primary); color: black; border: none; border-radius: 10px; cursor: pointer;">🪨</button>
+      <button onclick="makeMove('paper')" style="padding: 12px 16px; background: var(--primary); color: black; border: none; border-radius: 10px; cursor: pointer;">📄</button>
+      <button onclick="makeMove('scissors')" style="padding: 12px 16px; background: var(--primary); color: black; border: none; border-radius: 10px; cursor: pointer;">✂️</button>
+    </div>
+    <div id="roundsLog" style="color:#aaa;"></div>
+  </div>
+
+  <script>
+    function makeMove(choice) {
+      const log = document.getElementById("roundsLog");
+      const round = log.children.length + 1;
+      if (round > 5) {
+        alert("Game finished!");
+        return;
+      }
+      const result = `Round ${round}: You chose ${choice}`;
+      const div = document.createElement("div");
+      div.textContent = result;
+      log.appendChild(div);
+
+      if (round === 5) {
+        setTimeout(() => alert("Game finished! (Demo)"), 500);
+      }
+    }
+  </script>
+</div>
+<div id="pageAirdrop" class="page">
+  <h2 style="color: var(--primary); text-align: center;">Airdrop</h2>
+  <div style="max-width: 600px; margin: 30px auto; background: var(--card); padding: 30px; border-radius: var(--radius); text-align: center;">
+    <h3 style="color: white;">Get Free Pickles</h3>
+    <p style="color: #ccc; margin: 10px 0;">Stake tokens or refer friends to be eligible for the next airdrop.</p>
+    <button onclick="alert('Connected airdrop logic here')" style="margin-top: 20px; padding: 12px 24px; background: var(--primary); color: black; border: none; border-radius: var(--radius); font-weight: bold;">Check Eligibility</button>
+  </div>
+</div>
+<div id="pageTrade" class="page">
+  <h2 style="color: var(--primary); text-align: center;">Swap / Trade</h2>
+  <div style="max-width: 600px; margin: 30px auto; background: var(--card); padding: 30px; border-radius: var(--radius); text-align: center;">
+    <p style="color: #ccc; margin-bottom: 20px;">Easily swap your tokens on Sonic network using our integrated trade feature.</p>
+    <button onclick="alert('Trade function coming soon')" style="padding: 12px 24px; background: var(--primary); color: black; border: none; border-radius: var(--radius); font-weight: bold;">Launch DEX</button>
+  </div>
+</div>
+<div id="pagePool" class="page">
+  <h2 style="color: var(--primary); text-align: center;">Liquidity Pools</h2>
+  <div style="max-width: 700px; margin: 30px auto; background: var(--card); padding: 30px; border-radius: var(--radius); text-align: center;">
+    <p style="color: #ccc;">Provide liquidity to earn LP tokens and get rewards from trading fees and staking incentives.</p>
+    <button onclick="alert('Liquidity pool interface coming soon')" style="margin-top: 20px; padding: 12px 24px; background: var(--primary); color: black; border: none; border-radius: var(--radius); font-weight: bold;">Provide Liquidity</button>
+  </div>
+</div>
+<div id="pageStaking" class="page">
+  <h2 style="color: var(--primary); text-align: center;">Stake Your Pickles</h2>
+  <div class="container">
+    <div class="stat" id="balance">Balance: -</div>
+    <div class="stat" id="staked">Staked: -</div>
+    <div class="stat" id="pending">Pending Reward: -</div>
+    <div class="stat" id="apr">Estimated APR (14d): -</div>
+    <input type="number" id="amount" placeholder="Enter amount to stake" />
+    <div class="buttons desktop-only">
+      <button class="approve" id="approveBtn" onclick="approve()">Approve</button>
+      <button class="stake" id="stakeBtn" onclick="stake()" style="display:none;">Stake</button>
+      <button class="unstake disabled" id="unstakeBtn" onclick="unstake()" disabled>Unstake & Claim</button>
+    </div>
+  </div>
+  <div class="buttons mobile-only">
+  <button class="approve" id="approveBtnMobile" onclick="approve()">Approve</button>
+  <button class="stake" id="stakeBtnMobile" onclick="stake()" style="display:none;">Stake</button>
+  <button class="unstake disabled" id="unstakeBtnMobile" onclick="unstake()" disabled>Unstake & Claim</button>
+</div>
+</div>
+
+
+<script>
+let provider, signer, address;
+
+const stakeTokenAddress = "0xd47f94BAF0Deea650a3A93Aac6B72BC09C7dfC89";
+const stakingContractAddress = "0x4768b4215a4C0DFf860d0F9051E0B3597C8ec4f7";
+
+const stakeTokenAbi = [
+  {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+];
+
+const stakingAbi = [
+  {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"getUserInfo","outputs":[{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"depositTime","type":"uint256"},{"internalType":"uint256","name":"pending","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"lockPeriod","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"pendingReward","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"rewardRatePerSecond","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"totalStaked","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"stake","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[],"name":"unstake","outputs":[],"stateMutability":"nonpayable","type":"function"}
+];
+
+let isConnecting = false;
+
+async function connectWallet() {
+  if (isConnecting) return;
+  isConnecting = true;
+
+  try {
+    if (window.ethereum) {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      signer = provider.getSigner();
+      address = accounts[0];
+      document.getElementById("walletButton").innerText = address.slice(0, 6) + "..." + address.slice(-4);
+      localStorage.setItem("walletAddress", address);
+      await loadStakingData();
+    } else {
+      alert("Please install MetaMask");
+    }
+  } catch (err) {
+    if (err.code === -32002) {
+      alert("MetaMask is already requesting connection. Please check your wallet.");
+    } else {
+      alert("Wallet connection failed.");
+      console.error("Connect error:", err);
+    }
+  } finally {
+    isConnecting = false;
+  }
+}
+
+
+async function loadStakingData() {
+  const staking = new ethers.Contract(stakingContractAddress, stakingAbi, signer);
+  const token = new ethers.Contract(stakeTokenAddress, stakeTokenAbi, signer);
+
+
+  const [balance, user, pending, totalStaked, allowance, lockPeriod, rewardRate] = await Promise.all([
+    token.balanceOf(address),
+    staking.getUserInfo(address),
+    staking.pendingReward(address),
+    staking.totalStaked(),
+    token.allowance(address, stakingContractAddress),
+    staking.lockPeriod(),
+    staking.rewardRatePerSecond()
+  ]);
+
+  const decimals = await token.decimals();
+  const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+  const formattedStaked = ethers.utils.formatUnits(user.amount, decimals);
+  const formattedPending = ethers.utils.formatUnits(pending, decimals);
+  const apr = totalStaked > 0 ? ((rewardRate * 60 * 60 * 24 * 14 * user.amount) / totalStaked / user.amount * 100).toFixed(2) : "0";
+
+  document.getElementById("balance").innerText = `Balance: ${formattedBalance}`;
+  document.getElementById("staked").innerText = `Staked: ${formattedStaked}`;
+  document.getElementById("pending").innerText = `Pending Reward: ${formattedPending}`;
+  document.getElementById("apr").innerText = `Estimated APR (14d): ${apr}%`;
+
+  const now = Math.floor(Date.now() / 1000);
+  const canUnstake = user.amount > 0 && (now - user.depositTime >= lockPeriod);
+
+  ["unstakeBtn", "unstakeBtnMobile"].forEach(id => {
+    const btn = document.getElementById(id);
+    btn.disabled = !canUnstake;
+    btn.className = canUnstake ? "unstake" : "unstake disabled";
+  });
+
+  const parsedAllowance = ethers.utils.formatUnits(allowance, decimals);
+  if (parseFloat(parsedAllowance) > 1000000) {
+    ["approveBtn", "approveBtnMobile"].forEach(id => document.getElementById(id).style.display = "none");
+    ["stakeBtn", "stakeBtnMobile"].forEach(id => document.getElementById(id).style.display = "inline-block");
+  } else {
+    ["approveBtn", "approveBtnMobile"].forEach(id => document.getElementById(id).style.display = "inline-block");
+    ["stakeBtn", "stakeBtnMobile"].forEach(id => document.getElementById(id).style.display = "none");
+  }
+}
+
+async function approve() {
+  const token = new ethers.Contract(stakeTokenAddress, stakeTokenAbi, signer);
+  const tx = await token.approve(stakingContractAddress, ethers.constants.MaxUint256);
+  await tx.wait();
+  loadStakingData();
+}
+
+async function stake() {
+  const staking = new ethers.Contract(stakingContractAddress, stakingAbi, signer);
+  const amount = document.getElementById("amount").value;
+  if (!amount || isNaN(amount) || Number(amount) <= 0) return alert("Enter valid amount");
+  const token = new ethers.Contract(stakeTokenAddress, stakeTokenAbi, provider);
+  const decimals = await token.decimals();
+  const parsed = ethers.utils.parseUnits(amount, decimals);
+  const tx = await staking.stake(parsed);
+  await tx.wait();
+  loadStakingData();
+}
+
+async function unstake() {
+  const staking = new ethers.Contract(stakingContractAddress, stakingAbi, signer);
+  const tx = await staking.unstake();
+  await tx.wait();
+  loadStakingData();
+}
+
+window.addEventListener("load", async () => {
+  if (window.ethereum) {
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    const accounts = await provider.send("eth_accounts", []);
+    if (accounts.length > 0) {
+      signer = provider.getSigner();
+      address = accounts[0];
+      document.getElementById("walletButton").innerText = address.slice(0, 6) + "..." + address.slice(-4);
+      localStorage.setItem("walletAddress", address);
+      loadStakingData();
+    }
+  }
+});
+
+
+
+</script>
+<script>
+  function showPage(id) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  const page = document.getElementById(id);
+  if (page) {
+    page.classList.add("active");
+    localStorage.setItem("activePage", id);
+  }
+}
+
+  window.addEventListener("load", async () => {
+  const saved = localStorage.getItem("walletAddress");
+  if (saved && window.ethereum) {
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = provider.getSigner();
+    address = await signer.getAddress();
+    document.getElementById("walletButton").innerText = address.slice(0, 6) + "..." + address.slice(-4);
+  }
+});
+
+</script>
+<!-- نوار پایین موبایل -->
+<div class="bottom-nav mobile-only">
+  <div class="menu-group">
+    <a onclick="showPage('pageHome')">Home</a>
+  </div>
+  <div class="menu-group">
+    <a>Earn</a>
+    <div class="submenu">
+      <a onclick="showPage('pageStaking')">Staking</a>
+      <a onclick="showPage('pagePool')">Pool</a>
+      <a onclick="showPage('pageGame')">Game</a>
+    </div>
+  </div>
+  <div class="menu-group">
+    <a>Bet</a>
+    <div class="submenu">
+      <a onclick="showPage('pagePredictions')">Predictions</a>
+      <a onclick="showPage('pageMyBets')">My Bets</a>
+      <a onclick="showPage('pageCreateBet')">Create</a>
+    </div>
+  </div>
+  <div class="menu-group">
+    <a onclick="showPage('pageAirdrop')">More</a>
+  </div>
+</div>
+<script>
+
+window.addEventListener("load", () => {
+  const savedPage = localStorage.getItem("activePage") || "pageHome";
+  showPage(savedPage);
+});
+const providerOptions = {
+  walletconnect: {
+    package: window.WalletConnectProvider.default,
+    options: {
+      rpc: {
+        1111: "https://rpc.sonic.network"
+      }
+    }
+  }
+};
+let web3Modal, instance;
+web3Modal = new window.Web3Modal.default({
+  cacheProvider: true,
+  providerOptions
+});
+async function connectWallet() {
+  try {
+    instance = await web3Modal.connect();
+    provider = new ethers.providers.Web3Provider(instance);
+    signer = provider.getSigner();
+    address = await signer.getAddress();
+
+    document.getElementById("walletButton").innerText =
+      address.slice(0, 6) + "..." + address.slice(-4);
+
+    await loadStakingData();
+  } catch (err) {
+    console.error("Wallet connect error:", err);
+    alert("Connection failed. Please check your wallet.");
+  }
+}
+window.addEventListener("load", async () => {
+  if (web3Modal.cachedProvider) {
+    await connectWallet();
+  }
+});
+
+</script>
+
+</body>
+</html>
