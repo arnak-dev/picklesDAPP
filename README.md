@@ -1,9 +1,9 @@
 
 ---
 
-## ⚙️ Smart Contracts Overview
+## ⚙️ Smart Contracts Overview    (coming soon in full version)
 
-### 🎯 `Betting` (coming soon in full version)
+### 🎯 `Betting` 
 The platform supports creating and participating in decentralized bets.  
 Although the betting contract is not in this demo, the structure is designed for:
 
