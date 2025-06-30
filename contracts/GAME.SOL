@@ -1,0 +1,183 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+interface IPicklesToken {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function transfer(address to, uint256 amount) external returns (bool);
+    function burn(uint256 amount) external;
+}
+
+contract RockPaperScissorsGame {
+    IPicklesToken public token;
+    address public owner;
+
+    uint256 public entryFee = 100 * 1e18;
+    uint256 public timeout = 5 minutes;
+    uint256 public waitLimit = 1 hours;
+
+    enum Move { None, Rock, Paper, Scissors }
+
+    struct Game {
+        address player1;
+        address player2;
+        uint256 startTime;
+        uint256 createdAt;
+        uint8 round;
+        uint8 p1Wins;
+        uint8 p2Wins;
+        mapping(uint8 => Move) moves1;
+        mapping(uint8 => Move) moves2;
+        bool active;
+        bool claimed;
+    }
+
+    mapping(uint256 => Game) public games;
+    uint256 public gameIdCounter;
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not owner");
+        _;
+    }
+
+    event GameCreated(uint256 indexed gameId, address indexed player1);
+    event GameJoined(uint256 indexed gameId, address indexed player2);
+    event MoveSubmitted(uint256 indexed gameId, address indexed player, uint8 round, Move move);
+    event GameEnded(uint256 indexed gameId, address indexed winner);
+    event GameCancelled(uint256 indexed gameId);
+
+    constructor(address _token) {
+        token = IPicklesToken(_token);
+        owner = msg.sender;
+    }
+
+    function createGame() external {
+        require(token.transferFrom(msg.sender, address(this), entryFee), "Transfer failed");
+
+        uint256 id = gameIdCounter++;
+        Game storage g = games[id];
+        g.player1 = msg.sender;
+        g.createdAt = block.timestamp;
+        g.startTime = block.timestamp;
+        g.active = true;
+
+        emit GameCreated(id, msg.sender);
+    }
+
+    function joinGame(uint256 gameId) external {
+        Game storage g = games[gameId];
+        require(g.active, "Game not active");
+        require(g.player2 == address(0), "Already joined");
+        require(msg.sender != g.player1, "Can't join own game");
+        require(token.transferFrom(msg.sender, address(this), entryFee), "Transfer failed");
+
+        g.player2 = msg.sender;
+        g.startTime = block.timestamp;
+
+        emit GameJoined(gameId, msg.sender);
+    }
+
+    function submitMove(uint256 gameId, Move move) external {
+        require(move == Move.Rock || move == Move.Paper || move == Move.Scissors, "Invalid move");
+
+        Game storage g = games[gameId];
+        require(g.active, "Game not active");
+        require(msg.sender == g.player1 || msg.sender == g.player2, "Not a player");
+
+        uint8 r = g.round + 1;
+        if (msg.sender == g.player1) {
+            require(g.moves1[r] == Move.None, "Already played");
+            g.moves1[r] = move;
+        } else {
+            require(g.moves2[r] == Move.None, "Already played");
+            g.moves2[r] = move;
+        }
+
+        emit MoveSubmitted(gameId, msg.sender, r, move);
+
+        if (g.moves1[r] != Move.None && g.moves2[r] != Move.None) {
+            address winner = resolveRound(g, r);
+            if (winner == g.player1) g.p1Wins++;
+            else if (winner == g.player2) g.p2Wins++;
+
+            g.round++;
+
+            if (g.round == 5) {
+                finalizeGame(gameId);
+            } else {
+                g.startTime = block.timestamp;
+            }
+        }
+    }
+
+    function resolveRound(Game storage g, uint8 r) internal view returns (address) {
+        Move m1 = g.moves1[r];
+        Move m2 = g.moves2[r];
+        if (m1 == m2) return address(0);
+        if (
+            (m1 == Move.Rock && m2 == Move.Scissors) ||
+            (m1 == Move.Scissors && m2 == Move.Paper) ||
+            (m1 == Move.Paper && m2 == Move.Rock)
+        ) return g.player1;
+        else return g.player2;
+    }
+
+    function finalizeGame(uint256 gameId) public {
+        Game storage g = games[gameId];
+        require(g.active, "Game not active");
+        require(g.round == 5 || block.timestamp > g.startTime + timeout, "Game not finished");
+
+        address winner;
+        if (g.p1Wins > g.p2Wins) {
+            winner = g.player1;
+        } else if (g.p2Wins > g.p1Wins) {
+            winner = g.player2;
+        } else {
+            token.transfer(g.player1, entryFee);
+            token.transfer(g.player2, entryFee);
+            g.active = false;
+            emit GameEnded(gameId, address(0));
+            return;
+        }
+
+        distributeRewards(winner);
+        g.active = false;
+        emit GameEnded(gameId, winner);
+    }
+
+    function claimTimeoutWin(uint256 gameId) external {
+        Game storage g = games[gameId];
+        require(g.active, "Game not active");
+        require(block.timestamp > g.startTime + timeout, "Not timed out");
+
+        address opponent = (msg.sender == g.player1) ? g.player2 : g.player1;
+        require(opponent != address(0), "No opponent");
+
+        distributeRewards(msg.sender);
+        g.active = false;
+        emit GameEnded(gameId, msg.sender);
+    }
+
+    function cancelGameAndRefund(uint256 gameId) external {
+        Game storage g = games[gameId];
+        require(g.active, "Game not active");
+        require(msg.sender == g.player1, "Only player1");
+        require(g.player2 == address(0), "Game already joined");
+        require(block.timestamp > g.createdAt + waitLimit, "Too early");
+
+        token.transfer(g.player1, entryFee);
+        g.active = false;
+        g.claimed = true;
+        emit GameCancelled(gameId);
+    }
+
+    function distributeRewards(address winner) internal {
+        uint256 total = entryFee * 2;
+        uint256 toWinner = (total * 80) / 100;
+        uint256 toBurn = (total * 10) / 100;
+        uint256 toOwner = total - toWinner - toBurn;
+
+        token.transfer(winner, toWinner);
+        token.transfer(owner, toOwner);
+        token.burn(toBurn);
+    }
+}
